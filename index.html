@@ -309,7 +309,28 @@
 
       <section class="view hidden" id="view-subjects">
         <div class="section-intro"><div><p class="eyebrow">SYLLABUS CONTROL</p><h3>Subject Tracker</h3><p class="muted">Update completion based on topics genuinely studied.</p></div></div>
-        <div id="subjectGrid" class="subject-grid"></div>
+        <div class="panel">
+  <h3>Manage Your Subjects</h3>
+
+  <div class="timer-controls">
+    <input
+      type="text"
+      id="newSubjectName"
+      placeholder="Enter subject name"
+      maxlength="50"
+    >
+
+    <button class="primary" id="addSubjectButton">
+      + Add Subject
+    </button>
+  </div>
+
+  <p class="muted" id="subjectMessage">
+    Add subjects according to your exam.
+  </p>
+</div>
+
+<div id="subjectGrid" class="subject-grid"></div>
       </section>
 
       <section class="view hidden" id="view-timer">

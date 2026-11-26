@@ -834,6 +834,7 @@ renderTasks();
 }
 function renderSubjects(){$("subjectGrid").innerHTML=SUBJECTS.map(s=>{const p=subjectProgress[s]||0;return `<article class="subject-card"><div class="subject-top"><strong>${esc(s)}</strong><span>${p}%</span></div><div class="progress-track"><div class="progress-fill" style="width:${p}%"></div></div><small>Self-reported syllabus completion</small><div class="subject-actions"><button data-progress="${esc(s)}" data-delta="-5">−5%</button><button data-progress="${esc(s)}" data-delta="5">+5%</button><button data-progress="${esc(s)}" data-delta="10">+10%</button></div></article>`}).join("")}
 function addSubject(){
+
   const input = $("newSubjectName");
   const message = $("subjectMessage");
 
@@ -864,12 +865,8 @@ function addSubject(){
   input.value = "";
   message.textContent = "Subject added successfully.";
 }
-function renderAnalytics(){const days=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const key=d.toLocaleDateString("en-CA");const mins=sessions.filter(s=>s.date===key).reduce((a,s)=>a+s.minutes,0);days.push({key,label:d.toLocaleDateString(undefined,{weekday:"short"}),mins})}const total=days.reduce((a,d)=>a+d.mins,0);
-                           // Weekly Performance Summary
 
-$("performanceWeeklyHours").textContent =
-  (total / 60).toFixed(1) + "h";
-
+$("addSubjectButton").onclick = addSubject;
 // Find most studied subject this week
 const weeklyTopSubjects = {};
 

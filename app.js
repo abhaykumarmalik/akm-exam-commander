@@ -12,16 +12,13 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "621957377517",
   appId: "1:621957377517:web:57060b9a2d26a7a7d48be4"
 };
-const SUBJECTS = [
-  "Polity",
-  "History",
-  "Geography",
-  "Economy",
-  "Environment",
-  "Science & Technology",
-  "Current Affairs",
-  "CSAT",
-  "Ethics"
+let SUBJECTS = JSON.parse(
+  localStorage.getItem("akm_exam_subjects_v1") || "null"
+) || [
+  "General Studies",
+  "Mathematics",
+  "Reasoning",
+  "English"
 ];
 const $ = id => document.getElementById(id);
 const today = () => new Date().toLocaleDateString("en-CA");
@@ -34,7 +31,7 @@ let timerElapsedBeforePause = 0;
 let timerSessionActive = false;
 let selectedDate = today();
 
-const localKey = () => "upsc_commander_demo_v1";
+const localKey = () => "akm_exam_commander_demo_v1";
 function readLocal(){
   try {
     return JSON.parse(localStorage.getItem(localKey())) || {

@@ -1,0 +1,831 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UPSC COMMANDER | Admin</title>
+
+  <style>
+    
+/* Registered Users Table */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+  background: #111c30;
+  color: #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+thead {
+  background: #1e293b;
+}
+
+th, td {
+  padding: 14px;
+  text-align: left;
+  border-bottom: 1px solid #334155;
+  font-size: 13px;
+}
+
+th {
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+tbody tr:hover {
+  background: #1e293b;
+}
+
+#usersList td {
+  overflow-wrap: anywhere;
+}
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 25px;
+      background: #0b1120;
+      color: #e5e7eb;
+      font-family: Arial, sans-serif;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+    }
+
+    h1 { color: #60a5fa; }
+
+    .panel {
+      background: #172033;
+      padding: 20px;
+      border-radius: 12px;
+      margin-top: 20px;
+    }
+
+    button {
+      background: #2563eb;
+      color: white;
+      border: 0;
+      padding: 12px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #status { color: #fbbf24; }
+    .user-item {
+      padding: 10px;
+      margin-top: 8px;
+      background: #26334a;
+      border-radius: 6px;
+      overflow-wrap: anywhere;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <h1>UPSC COMMANDER</h1>
+    <p>Administrator Dashboard</p>
+
+    <div class="panel">
+      <h2>Admin Access</h2>
+      <p id="status">Checking account...</p>
+      <button id="logout">Logout</button>
+    </div>
+
+    <div class="panel">
+      <h2>User Management</h2>
+      <p>Total Registered Users:
+        
+<input
+  type="text"
+  id="userSearch"
+  placeholder="Search by Email or User ID..."
+  style="width:100%; padding:12px; margin:15px 0;
+  border-radius:8px; border:1px solid #334155;
+  background:#111c30; color:white;"
+/>
+
+  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:15px; margin:20px 0;">
+
+  <div style="background:#17243b; padding:20px; border-radius:12px;">
+    <p>Total Registered Users</p>
+    <h2 id="totalUsers">0</h2>
+  </div>
+
+  <div style="background:#17243b; padding:20px; border-radius:12px;">
+    <p>Active Users</p>
+    <h2 id="activeUsers">0</h2>
+  </div>
+
+  <div style="background:#17243b; padding:20px; border-radius:12px;">
+    <p>Suspended Users</p>
+    <h2 id="suspendedUsers">0</h2>
+  </div>
+
+  <div style="background:#17243b; padding:20px; border-radius:12px;">
+    <p>Today's Registrations</p>
+    <h2 id="todayRegistrations">0</h2>
+  </div>
+
+  <div style="background:#17243b; padding:20px; border-radius:12px;">
+    <p>Total Study Hours</p>
+    <h2 id="totalStudyHours">0</h2>
+  </div>
+
+</div>
+
+<div style="overflow-x:auto;">
+  <table style="width:100%; border-collapse:collapse; color:white;">
+    <thead>
+      <tr>
+    <th>User ID</th>
+    <th>Email</th>
+    <th>Registration Date</th>
+    <th>Last Login</th>
+    <th>Account Status</th>
+    <th>Action</th>
+  </tr>
+    </thead>
+    <tbody id="usersList">
+      <tr>
+        <td colspan="4">Loading users...</td>
+      </tr>
+    </tbody>
+  </table>
+  
+<!-- STUDENT PERFORMANCE RANKING -->
+<div id="rankingSection"
+     style="margin-top:25px; padding:20px;
+     background:#111c30; border-radius:12px; color:white;">
+
+  <h3>🏆 Student Performance Ranking</h3>
+
+  <p>Students ranked by study hours and task completion.</p>
+
+  <div style="overflow-x:auto;">
+    <table style="width:100%; border-collapse:collapse; color:white;">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Student Email</th>
+          <th>Study Hours</th>
+          <th>Completed Tasks</th>
+          <th>Pending Tasks</th>
+          <th>Performance</th>
+        </tr>
+      </thead>
+
+      <tbody id="rankingList">
+        <tr>
+          <td colspan="6">Loading rankings...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+<!-- END PERFORMANCE RANKING -->
+
+  <div id="userDetails"
+     style="margin-top:25px; padding:20px;
+     background:#111c30; border-radius:12px; color:white;">
+
+  <h3>User Study Details</h3>
+
+  <p>Select a user to view their study progress and daily tasks.</p>
+
+</div>
+</div>
+
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script type="module">
+
+    import { initializeApp } from
+      "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signOut
+    } from
+      "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    import {
+      getFirestore,
+      doc,
+      getDocFromServer,
+      collection,
+      updateDoc,
+      getDocs
+    } from
+      "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+
+    // Apne Firebase Project ki existing values yahan rakho.
+    const firebaseConfig = {
+      apiKey: "AIzaSyBYf0Xh3RSLlxOEDoEEnyTPvw6ZYf9RreI",
+      authDomain: "upsc-commander.firebaseapp.com",
+      projectId: "upsc-commander",
+      storageBucket: "upsc-commander.firebasestorage.app",
+      messagingSenderId: "621957377517",
+      appId: "1:621957377517:web:57060b9a2d26a7a7d48be4"
+    };
+
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const status = document.getElementById("status");
+    const usersList = document.getElementById("usersList");
+    const totalUsers = document.getElementById("totalUsers");
+
+
+    onAuthStateChanged(auth, async (user) => {
+console.log("Admin Auth User:", user);
+      if (!user) {
+        status.textContent = "Please login first.";
+        usersList.textContent = "Login required.";
+        return;
+      }
+
+      try {
+
+        // Verify Admin
+        const adminDoc = await getDocFromServer(
+          doc(db, "admin", user.uid)
+        );
+
+        if (
+          !adminDoc.exists() ||
+          adminDoc.data().role !== "admin"
+        ) {
+          status.textContent = "Access denied: Not an admin.";
+          usersList.textContent = "Admin access required.";
+          return;
+        }
+
+        status.textContent = "Admin verified successfully.";
+
+        
+        // Load Registered Users
+        usersList.innerHTML = `
+          <tr>
+            <td colspan="4">Loading users...</td>
+          </tr>
+        `;
+
+        const usersSnapshot = await getDocs(
+          collection(db, "users")
+        );
+
+        totalUsers.textContent = usersSnapshot.size;
+        // Count Active and Suspended Users
+let activeCount = 0;
+let suspendedCount = 0;
+let todayCount = 0;
+
+const today = new Date().toDateString();
+
+usersSnapshot.forEach((userDoc) => {
+  const data = userDoc.data();
+
+  const status = String(data.accountStatus || "Active").trim();
+
+  if (status === "Active") {
+    activeCount++;
+  } else if (status === "Suspended") {
+    suspendedCount++;
+  }
+
+  if (data.createdAt) {
+    const registrationDate = new Date(data.createdAt);
+
+    if (
+      !isNaN(registrationDate.getTime()) &&
+      registrationDate.toDateString() === today
+    ) {
+      todayCount++;
+    }
+  }
+});
+// STUDENT PERFORMANCE RANKING
+const rankingList = document.getElementById("rankingList");
+
+rankingList.innerHTML = `
+  <tr>
+    <td colspan="6">Calculating student rankings...</td>
+  </tr>
+`;
+
+const studentRankings = await Promise.all(
+  usersSnapshot.docs.map(async (userDoc) => {
+    const data = userDoc.data();
+
+    const tasksSnapshot = await getDocs(
+      collection(db, "users", userDoc.id, "tasks")
+    );
+
+    const sessionsSnapshot = await getDocs(
+      collection(db, "users", userDoc.id, "sessions")
+    );
+
+    let completedTasks = 0;
+    let totalMinutes = 0;
+
+    tasksSnapshot.forEach((taskDoc) => {
+      const task = taskDoc.data();
+
+      if (
+        task.done === true ||
+        task.completed === true ||
+        task.status === "completed"
+      ) {
+        completedTasks++;
+      }
+    });
+
+    sessionsSnapshot.forEach((sessionDoc) => {
+      const session = sessionDoc.data();
+
+      totalMinutes += Number(
+        session.minutes || session.durationMinutes || 0
+      );
+    });
+
+    const totalTasks = tasksSnapshot.size;
+    const pendingTasks = totalTasks - completedTasks;
+    const studyHours = totalMinutes / 60;
+
+    const completionRate = totalTasks > 0
+      ? (completedTasks / totalTasks) * 100
+      : 0;
+
+    return {
+      email: data.email || "Not available",
+      studyHours,
+      completedTasks,
+      pendingTasks,
+      completionRate
+    };
+  })
+);
+
+studentRankings.sort((a, b) =>
+  b.studyHours - a.studyHours ||
+  b.completionRate - a.completionRate
+);
+
+rankingList.innerHTML = "";
+
+studentRankings.forEach((student, index) => {
+  const row = document.createElement("tr");
+
+  row.innerHTML = `
+    <td>${index + 1}</td>
+    <td></td>
+    <td>${student.studyHours.toFixed(1)} hrs</td>
+    <td>${student.completedTasks}</td>
+    <td>${student.pendingTasks}</td>
+    <td>${student.completionRate.toFixed(0)}%</td>
+  `;
+
+  row.cells[1].textContent = student.email;
+
+  rankingList.appendChild(row);
+});
+
+if (studentRankings.length === 0) {
+  rankingList.innerHTML = `
+    <tr>
+      <td colspan="6">No students found.</td>
+    </tr>
+  `;
+}
+// Update Statistics Cards
+document.getElementById("activeUsers").textContent = activeCount;
+
+document.getElementById("suspendedUsers").textContent = suspendedCount;
+
+document.getElementById("todayRegistrations").textContent = todayCount;
+
+// Study hours will be connected in the next step
+// Calculate Total Study Hours
+let totalStudyMinutes = 0;
+
+for (const userDoc of usersSnapshot.docs) {
+  const sessionsSnapshot = await getDocs(
+    collection(db, "users", userDoc.id, "sessions")
+  );
+
+  sessionsSnapshot.forEach((sessionDoc) => {
+    const session = sessionDoc.data();
+
+    totalStudyMinutes += Number(
+      session.minutes || session.durationMinutes || 0
+    );
+  });
+}
+
+const totalStudyHours = (totalStudyMinutes / 60).toFixed(1);
+
+document.getElementById("totalStudyHours").textContent =
+  totalStudyHours;
+        usersList.innerHTML = "";
+
+        if (usersSnapshot.empty) {
+          usersList.innerHTML = `
+            <tr>
+              <td colspan="4">No registered users found.</td>
+            </tr>
+          `;
+        } else {
+          usersSnapshot.forEach((userDoc) => {
+            const data = userDoc.data();
+            const statusCell = document.createElement("td");
+statusCell.textContent = data.accountStatus || "Active";
+
+            const row = document.createElement("tr");
+            // User Email
+const emailCell = document.createElement("td");
+emailCell.textContent = data.email || "Not available";
+
+// Registration Date
+const createdCell = document.createElement("td");
+createdCell.textContent = data.createdAt
+  ? new Date(data.createdAt).toLocaleString("en-IN")
+  : "Not available";
+
+// Last Login
+const loginCell = document.createElement("td");
+loginCell.textContent = data.lastLogin
+  ? new Date(data.lastLogin).toLocaleString("en-IN")
+  : "Not available";
+
+            const userIdCell = document.createElement("td");
+            userIdCell.textContent = userDoc.id;
+            
+userIdCell.style.color = "#38bdf8";
+userIdCell.style.cursor = "pointer";
+userIdCell.title = "Click to view user details";
+            // Subject-wise Study Report
+
+
+userIdCell.addEventListener("click", async () => {
+  const details = document.getElementById("userDetails");
+
+  details.innerHTML = "<h3>Loading User Details...</h3>";
+
+  try {
+    // Get Study Progress
+    const progressDoc = await getDocFromServer(
+      doc(db, "users", userDoc.id, "settings", "progress")
+    );
+
+    // Get Daily Tasks
+    const tasksSnapshot = await getDocs(
+      collection(db, "users", userDoc.id, "tasks")
+    );
+    
+    // Get Focus Sessions
+    const sessionsSnapshot = await getDocs(
+      collection(db, "users", userDoc.id, "sessions")
+    );
+
+    // Calculate Task Statistics
+    const totalTasks = tasksSnapshot.size;
+    let completedTasks = 0;
+
+    tasksSnapshot.forEach((taskDoc) => {
+      const task = taskDoc.data();
+
+      if (
+  task.done === true ||
+  task.completed === true ||
+  task.status === "completed"
+) {
+  completedTasks++;
+}
+
+});
+
+const pendingTasks = totalTasks - completedTasks;
+
+const completionRate = totalTasks > 0
+  ? ((completedTasks / totalTasks) * 100).toFixed(1)
+  : 0;
+
+    // Calculate Study Hours
+    let totalMinutes = 0;
+
+    sessionsSnapshot.forEach((sessionDoc) => {
+      const session = sessionDoc.data();
+      totalMinutes += Number(session.duration || session.minutes || 0);
+    });
+
+    const totalHours = (totalMinutes / 60).toFixed(1);
+
+
+    const progress = progressDoc.exists()
+      ? JSON.stringify(progressDoc.data(), null, 2)
+      : "No study progress found.";
+
+    const tasks = tasksSnapshot.empty
+      ? "No daily tasks found."
+      : tasksSnapshot.docs.map(task =>
+          JSON.stringify(task.data(), null, 2)
+        ).join("\n\n");
+
+    details.innerHTML = "";
+
+    const heading = document.createElement("h3");
+    
+    // Activity Overview
+    const activityHeading = document.createElement("h4");
+    activityHeading.textContent = "Activity Overview";
+
+    const activityText = document.createElement("div");
+
+    activityText.innerHTML = `
+      <p>Total Study Hours: <strong>${totalHours}</strong></p>
+      <p>Total Focus Sessions: <strong>${sessionsSnapshot.size}</strong></p>
+      <p>Completed Tasks: <strong>${completedTasks}</strong></p>
+      <p>Pending Tasks: <strong>${pendingTasks}</strong></p>
+      <p>Task Completion Rate: <strong>${completionRate}%</strong></p>
+      <div style="background:#334155; height:12px; border-radius:10px; overflow:hidden; margin:10px 0 20px;">
+  <div style="
+    width:${completionRate}%;
+    height:100%;
+    background:#22c55e;
+    border-radius:10px;
+  "></div>
+</div>
+    `;
+
+    heading.textContent = "User Study Details";
+    const userInfo = document.createElement("div");
+
+userInfo.innerHTML = `
+  <p>User ID: <strong>${userDoc.id}</strong></p>
+  <p>Email: <strong>${data.email || "Not available"}</strong></p>
+  <p>Account Status: <strong>${String(data.accountStatus || "Active").trim()}</strong></p>
+  <p>Registration Date: <strong>${data.createdAt ? new Date(data.createdAt).toLocaleString("en-IN") : "Not available"}</strong></p>
+
+<p>Last Login: <strong>${data.lastLogin ? new Date(data.lastLogin).toLocaleString("en-IN") : "Not available"}</strong></p>
+`;
+
+    const progressHeading = document.createElement("h4");
+    progressHeading.textContent = "Study Progress";
+
+    const progressText = document.createElement("pre");
+    progressText.textContent = progress;
+
+    const tasksHeading = document.createElement("h4");
+tasksHeading.textContent = "Daily Tasks";
+
+const tasksText = document.createElement("pre");
+tasksText.textContent = tasks;
+
+// Subject-wise Study Report
+
+    const subjectStats = {};
+
+tasksSnapshot.forEach((taskDoc) => {
+  const task = taskDoc.data();
+  const subject = task.subject || "Other";
+
+  if (!subjectStats[subject]) {
+    subjectStats[subject] = {
+      totalTasks: 0,
+      completedTasks: 0,
+      plannedMinutes: 0
+    };
+  }
+
+  subjectStats[subject].totalTasks++;
+  subjectStats[subject].plannedMinutes += Number(task.minutes || 0);
+
+  if (
+    task.done === true ||
+    task.completed === true ||
+    task.status === "completed"
+  ) {
+    subjectStats[subject].completedTasks++;
+  }
+});
+
+const subjectHeading = document.createElement("h4");
+subjectHeading.textContent = "Subject-wise Study Report";
+
+const subjectText = document.createElement("pre");
+
+subjectText.textContent = Object.entries(subjectStats).length
+  ? Object.entries(subjectStats).map(([subject, stats]) => {
+      return `${subject}
+Total Tasks: ${stats.totalTasks}
+Completed: ${stats.completedTasks}
+Pending: ${stats.totalTasks - stats.completedTasks}
+Completion Rate: ${((stats.completedTasks / stats.totalTasks) * 100).toFixed(1)}%
+Planned Time: ${stats.plannedMinutes} minutes`;
+    }).join("\n\n")
+  : "No subject-wise tasks found.";
+    const sessionsHeading = document.createElement("h4");
+sessionsHeading.textContent = "Focus Session Records";
+
+const sessionsText = document.createElement("pre");
+sessionsText.textContent = sessionsSnapshot.empty
+  ? "No focus sessions found."
+  : sessionsSnapshot.docs.map(sessionDoc =>
+      JSON.stringify(sessionDoc.data(), null, 2)
+    ).join("\n\n");
+
+    details.append(
+  heading,
+  userInfo,
+  subjectHeading,
+  subjectText,
+  activityHeading,
+  activityText,
+  progressHeading,
+  progressText,
+    tasksHeading,
+  tasksText,
+  sessionsHeading,
+  sessionsText
+);
+    
+    // Download PDF Report Button
+    const pdfButton = document.createElement("button");
+    pdfButton.textContent = "Download PDF Report";
+    pdfButton.style.cssText =
+      "padding:12px 20px; margin-top:15px; background:#2563eb; color:white; border:0; border-radius:8px; cursor:pointer;";
+
+    pdfButton.onclick = async () => {
+  try {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF();
+
+    pdf.setFontSize(18);
+    pdf.text("UPSC COMMANDER", 20, 25);
+
+    pdf.setFontSize(12);
+    pdf.text("Student Study Report", 20, 40);
+    pdf.text("User ID: " + userDoc.id, 20, 55);
+    pdf.text("Email: " + (data.email || "Not available"), 20, 65);
+    pdf.text("Account Status: " + String(data.accountStatus || "Active").trim(), 20, 75);
+    pdf.text("Total Study Hours: " + totalHours, 20, 90);
+    pdf.text("Focus Sessions: " + sessionsSnapshot.size, 20, 100);
+    pdf.text("Completed Tasks: " + completedTasks, 20, 110);
+    pdf.text("Pending Tasks: " + pendingTasks, 20, 120);
+
+    let y = 140;
+
+    pdf.setFontSize(14);
+    pdf.text("Subject-wise Study Report", 20, y);
+    y += 10;
+
+    pdf.setFontSize(10);
+
+    Object.entries(subjectStats).forEach(([subject, stats]) => {
+      if (y > 270) {
+        pdf.addPage();
+        y = 20;
+      }
+
+      pdf.text(
+  subject + " | Tasks: " + stats.totalTasks +
+  " | Completed: " + stats.completedTasks +
+  " | Planned: " + stats.plannedMinutes + " min",
+  20,
+  y
+);
+
+      y += 8;
+    });
+
+    pdf.save("UPSC-Commander-Student-Report.pdf");
+
+  } catch (error) {
+    alert("PDF Error: " + error.message);
+  }
+};
+
+details.appendChild(pdfButton);
+
+  } catch (error) {
+    details.textContent = "Unable to load details: " + error.message;
+  }
+});
+
+            
+const actionCell = document.createElement("td");
+
+const actionButton = document.createElement("button");
+
+const currentStatus = String(data.accountStatus || "Active").trim();
+
+actionButton.textContent =
+  currentStatus === "Suspended" ? "Reactivate" : "Suspend";
+
+actionButton.style.cssText =
+  "padding:8px 12px; border:0; border-radius:6px; cursor:pointer;";
+
+
+actionButton.onclick = async () => {
+  const newStatus =
+  statusCell.textContent.trim() === "Suspended"
+    ? "Active"
+    : "Suspended";
+
+  const confirmed = confirm(
+    "Are you sure you want to set this user as " + newStatus + "?"
+  );
+
+  if (!confirmed) return;
+
+  try {
+    await updateDoc(
+      doc(db, "users", userDoc.id),
+      { accountStatus: newStatus }
+    );
+
+    statusCell.textContent = newStatus;
+    actionButton.textContent =
+      newStatus === "Suspended" ? "Reactivate" : "Suspend";
+
+    alert("User status updated successfully.");
+
+  } catch (error) {
+    alert("Update failed: " + error.message);
+  }
+};
+
+
+actionCell.appendChild(actionButton);
+
+            row.append(
+  userIdCell,
+  emailCell,
+  createdCell,
+  loginCell,
+  statusCell,
+  actionCell
+            );
+
+            
+usersList.appendChild(row);
+          });
+        }
+
+        // Search Users
+        document.getElementById("userSearch").addEventListener("input", function () {
+          const searchValue = this.value.toLowerCase();
+          const rows = usersList.querySelectorAll("tr");
+
+          rows.forEach((row) => {
+            const userDetails = row.textContent.toLowerCase();
+            row.style.display = userDetails.includes(searchValue) ? "" : "none";
+          });
+        });
+
+        console.log("Admin verified:", user.uid);
+
+        console.log("Total users:", usersSnapshot.size);
+
+
+      } catch (error) {
+
+        status.textContent = "Firebase Error: " + error.message;
+        usersList.textContent = "Unable to load users.";
+
+        console.error("Admin Dashboard Error:", error);
+
+      }
+
+    });
+
+
+    // Logout
+    document.getElementById("logout").onclick = async () => {
+
+      try {
+        await signOut(auth);
+        status.textContent = "Logged out successfully.";
+        usersList.textContent = "Logged out.";
+
+      } catch (error) {
+        status.textContent = "Logout Error: " + error.message;
+      }
+
+    };
+
+  </script>
+</body>
+</html>
